@@ -9,15 +9,23 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "date-fns": "^4.1.0",
+    "googleapis": "^156.0.0",
+    "mongoose": "^8.17.1",
+    "next": "15.4.6",
+    "next-auth": "^4.24.11",
+    "node-cron": "^4.2.1",
     "react": "19.1.0",
     "react-dom": "19.1.0",
-    "next": "15.4.6"
+    "twilio": "^5.8.0"
   },
   "devDependencies": {
+    "@eslint/eslintrc": "^3",
     "@tailwindcss/postcss": "^4",
-    "tailwindcss": "^4",
+    "@types/node": "24.3.0",
+    "@types/react": "19.1.10",
     "eslint": "^9",
     "eslint-config-next": "15.4.6",
-    "@eslint/eslintrc": "^3"
+    "tailwindcss": "^4"
   }
 }

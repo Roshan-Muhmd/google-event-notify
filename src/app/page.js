@@ -1,103 +1,162 @@
-import Image from "next/image";
+'use client';
+import { useState } from "react";
+import { useSession, signIn, signOut } from "next-auth/react"
+import { format } from "date-fns";
+import { useEffect } from "react";
 
 export default function Home() {
-  return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              src/app/page.js
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+   const [phone, setPhone] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState("");
+  const [events, setEvents] = useState([])
+  
+
+  const { data: session, status } = useSession();
+
+  // Fetch events and user phone number on page load
+
+  const getEvents = async () => {
+    const now = new Date();
+    const oneYearLater = new Date();
+    oneYearLater.setFullYear(now.getFullYear() + 3);
+    const url = new URL("https://www.googleapis.com/calendar/v3/calendars/primary/events");
+    url.searchParams.set("singleEvents", "true");
+    url.searchParams.set("orderBy", "startTime");
+    url.searchParams.set("timeMin", now.toISOString());
+    url.searchParams.set("timeMax", oneYearLater.toISOString());
+    const res = await fetch(url, {
+      headers: {
+        Authorization: `Bearer ${session?.accessToken}`,
+      },
+    });
+    const data = await res.json();
+    setEvents(data.items || []);
+  };
+
+  const fetchUserPhone = async () => {
+    if (!session?.user?.email) return;
+    const res = await fetch("/api/user?email=" + encodeURIComponent(session.user.email));
+    if (res.ok) {
+      const data = await res.json();
+      if (data.phoneNumber) setPhone(data.phoneNumber);
+    }
+  };
+
+  useEffect(() => {
+    if (status === "authenticated") {
+      getEvents();
+      fetchUserPhone();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [status, session]);
+
+
+
+
+const save = async () => {
+
+  if(phone.trim() === "") {
+    setMessage("Phone number is required");
+    return;
+  }
+  setLoading(true);
+  setMessage("");
+  try {
+    const res = await fetch("/api/user", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email: session?.user?.email,
+        phoneNumber: phone,
+        googleRefreshToken: session?.refreshToken, // Add refresh token
+      }),
+    });
+
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.error || "Failed to save");
+    }
+
+    setMessage("Saved.");
+  } catch (e) {
+    setMessage(e.message || "An error occurred");
+  } finally {
+    setLoading(false);
+  }
+};
+
+
+  return (
+    <div className="font-sans min-h-screen bg-gray-50 dark:bg-gray-900 p-8 grid place-items-center">
+      <main className="w-full max-w-4xl space-y-8 bg-white dark:bg-gray-800 rounded-xl shadow-lg p-8">
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Google Calendar Call Reminders</h1>
+
+        {status !== "authenticated" ? (
+          <button
+            onClick={() => signIn("google")}
+            className="w-full m-20 max-w-2xl h-10 rounded-lg bg-black text-white dark:bg-white dark:text-black font-medium transition hover:bg-gray-800 dark:hover:bg-gray-200"
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
+            Sign in with Google
+          </button>
+        ) : (
+          <div className="space-y-6">
+            <div className="text-sm text-gray-700 dark:text-gray-300">Signed in as <span className="font-semibold">{session.user?.email || ""}</span></div>
+            <div className="flex gap-2">
+              <input
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                className="flex-1 h-10 rounded-lg border max-w-lg border-gray-300 dark:border-gray-700 px-3 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Enter phonenumber with country code e.g. +15551234567"
+              />
+              <button
+                onClick={save}
+                disabled={loading}
+                className="h-10 rounded-lg px-4 bg-blue-600 text-white font-semibold transition hover:bg-blue-700 disabled:opacity-60"
+              >
+                {loading ? "Saving..." : "Save"}
+              </button>
+            </div>
+            {message && <div className="text-sm text-blue-600 dark:text-blue-400">{message}</div>}
+            <button
+              onClick={() => signOut()}
+              className="text-sm underline text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition"
+            >
+              Sign out
+            </button>
+
+            <div className="bg-gray-100 dark:bg-gray-700 rounded-lg p-4 mt-4">
+              <h2 className="text-lg font-semibold text-gray-800 dark:text-white mb-2">Google Calendar Events</h2>
+              <button
+                onClick={getEvents}
+                className="mb-4 px-4 py-2 rounded bg-blue-500 text-white font-medium hover:bg-blue-600 transition"
+              >
+                Load Events
+              </button>
+              <ul className="space-y-2">
+                {events.map((event) => {
+                  let dateStr = event.start?.dateTime || event.start?.date;
+                  let formattedDate = dateStr
+                    ? format(new Date(dateStr), event.start?.dateTime ? "PPpp" : "PPP")
+                    : "";
+                  return (
+                    <li key={event.id} className="p-2 rounded bg-white dark:bg-gray-800 shadow text-gray-900 dark:text-gray-100">
+                      <strong>{event.summary}</strong>
+                      <span className="ml-2 text-sm text-gray-600 dark:text-gray-400">
+                        — {formattedDate}
+                      </span>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          </div>
+        )}
+
+        <p className="text-xs opacity-70 text-gray-500 dark:text-gray-400 mt-6">
+          A cron job will call your phone 5 minutes before events on your primary calendar.
+        </p>
       </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
     </div>
   );
 }
