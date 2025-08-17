@@ -92,7 +92,7 @@ async function processUser(user) {
 async function checkEventsAndCall() {
   await dbConnect();
   const users = await User.find({}); // fetch all users
-
+    
   // Process users in parallel
   await Promise.all(users.map(processUser));
 }
