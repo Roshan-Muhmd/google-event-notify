@@ -7,12 +7,6 @@ import User from "../models/User.js";
 
 const client = twilio(process.env.TWILIO_SID, process.env.TWILIO_AUTH_TOKEN);
 
-function formatDate(d) {
-  return {
-    utc: d.toISOString(),
-    local: d.toLocaleString(),
-  };
-}
 
 async function processUser(user) {
      console.log(`Processing user: ${user.email}`);
