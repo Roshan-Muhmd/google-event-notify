@@ -62,7 +62,7 @@ async function processUser(user) {
         console.log(`Triggering call for ${user.email}:`, event.summary);
 
         await client.calls.create({
-          url: "http://demo.twilio.com/docs/voice.xml", // Replace with TwiML endpoint
+          url: "http://demo.twilio.com/docs/voice.xml", 
           to: user.phoneNumber,
           from: process.env.TWILIO_PHONE_NUMBER,
         });
