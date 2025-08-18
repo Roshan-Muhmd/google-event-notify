@@ -32,7 +32,7 @@ root/
 
 ### 1. Clone the Repository
         ```bash
-        git clone https://github.com/<your-username>/google-event-notify.git
+        git clone https://github.com/Roshan-Muhmd/google-event-notify.git
         cd google-event-notify
 
 
