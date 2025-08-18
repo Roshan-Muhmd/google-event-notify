@@ -15,8 +15,9 @@ function formatDate(d) {
 }
 
 async function processUser(user) {
+     console.log(`Processing user: ${user.email}`);
   if (!user.googleRefreshToken || !user.phoneNumber) return;
-
+  console.log(`token: ${user.googleRefreshToken}, phone: ${user.phoneNumber}`);
   try {
     // Google OAuth client
     const oauth2Client = new google.auth.OAuth2(
@@ -50,7 +51,7 @@ async function processUser(user) {
 
     const events = res.data.items || [];
     const calledEventIds = user.calledEventIds || [];
-
+    console.log("events:",events)
 
     for (const event of events) {
       const start = new Date(event.start.dateTime || event.start.date);
@@ -92,12 +93,13 @@ async function processUser(user) {
 async function checkEventsAndCall() {
   await dbConnect();
   const users = await User.find({}); // fetch all users
-    
+     console.log(`users found: ${users.length}`);
   // Process users in parallel
   await Promise.all(users.map(processUser));
 }
 
 // Run every minute
 export function startScheduler() {
+     console.log(`cron job started at ${new Date().toISOString()}`);
   cron.schedule("* * * * *", checkEventsAndCall);
 }
