@@ -12,26 +12,13 @@ It uses **Vercel Serverless Functions** for API routes and **cron jobs** (or Git
 - Automatic scheduled tasks via **Vercel Cron Jobs** or **GitHub Actions**
 - Logging & monitoring via Vercel Dashboard
 
----
-
-## 📂 Project Structure
-
-root/
-├── app/ # Next.js App Router pages
-├── api/
-│ └── crone/
-│ └── check-events.ts # API route to check Google events
-├── vercel.json # Defines cron jobs for scheduled execution
-├── package.json
-├── README.md
-
 
 ---
 
 ## ⚙️ Setup
 
 ### 1. Clone the Repository
-        ```bash
+
         git clone https://github.com/Roshan-Muhmd/google-event-notify.git
         cd google-event-notify
 
